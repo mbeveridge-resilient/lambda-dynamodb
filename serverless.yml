@@ -1,0 +1,54 @@
+# Welcome to serverless. Read the docs
+# https://serverless.com/framework/docs/
+
+# Serverless.yml is the configuration the CLI
+# uses to deploy your code to your provider of choice
+
+# The `service` block is the name of the service
+service: serverless-scala-lambda
+
+# The `provider` block defines where your service will be deployed
+provider:
+  name: aws
+  runtime: java8
+  region: eu-west-1
+  stage: dev
+  iamRoleStatements: # permissions for all of your functions can be set here
+    - Effect: Allow
+      Action: # Gives permission to DynamoDB callsTable in eu-west-1
+        - dynamodb:DescribeTable
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        Fn::GetAtt:
+          - callsTable
+          - Arn
+
+package:
+  artifact: ./target/scala-2.12/lambda-dynamodb-assembly-1.0.jar
+
+# The `functions` block defines what code to deploy
+functions:
+  lambdaScala:
+    handler: com.resilient.LambdaHandler
+
+# AWS resources. CloudFormation template syntax
+resources:
+  Resources:
+    callsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: callsTable
+        AttributeDefinitions:
+          - AttributeName: callId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: callId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
